@@ -168,6 +168,11 @@ public class CITreeView: UITableView {
         treeViewController.collapseAllRows()
         reloadDataWithoutChangingRowStates()
     }
+
+    public func expandRow(for treeViewNode: CITreeViewNode, withSelected indexPath: IndexPath) {
+        treeViewController.expandRows(atIndexPath: indexPath, with: treeViewNode)
+        reloadDataWithoutChangingRowStates()
+    }
 }
 
 extension CITreeView: UITableViewDelegate {
