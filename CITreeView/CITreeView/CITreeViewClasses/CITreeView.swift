@@ -18,6 +18,7 @@ public protocol CITreeViewDataSource: NSObjectProtocol {
 
 @objc
 public protocol CITreeViewDelegate: NSObjectProtocol {
+    func treeViewDidReloadData(_ treeView: CITreeView, changeStat: Bool)
     func treeView(_ treeView: CITreeView, heightForRowAt indexPath: IndexPath, with treeViewNode: CITreeViewNode) -> CGFloat
     func treeView(_ treeView: CITreeView, didSelectRowAt treeViewNode: CITreeViewNode, at indexPath: IndexPath)
     func treeView(_ treeView: CITreeView, didDeselectRowAt treeViewNode: CITreeViewNode, at indexPath: IndexPath)
@@ -70,6 +71,7 @@ public class CITreeView: UITableView {
         mainDataArray = treeViewController.treeViewNodes
         
         super.reloadData()
+        treeViewDelegate?.treeViewDidReloadData(self, changeStat: true)
     }
 
     public func reloadDataWithoutChangingRowStates() {
@@ -88,6 +90,7 @@ public class CITreeView: UITableView {
             mainDataArray = treeViewController.treeViewNodes
         }
         super.reloadData()
+        treeViewDelegate?.treeViewDidReloadData(self, changeStat: false)
     }
     
     fileprivate func deleteRows() {

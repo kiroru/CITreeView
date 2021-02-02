@@ -12,6 +12,7 @@ class ViewController: UIViewController {
     
     var data : [CITreeViewData] = []
     //var treeView:CITreeView!
+    var initialized = false
     
     let treeViewCellIdentifier = "TreeViewCellIdentifier"
     let treeViewCellNibName = "CITreeViewCell"
@@ -25,11 +26,7 @@ class ViewController: UIViewController {
     }
     
     @IBAction func reloadBarButtonAction(_ sender: UIBarButtonItem) {
-        let expandSample = data[5].children[1].children[2].children[2]
-        print("expandSample:\(expandSample.name)")
-        sampleTreeView.expandRowRecursive(for: expandSample)
-
-//        sampleTreeView.expandAllRows()
+        sampleTreeView.expandAllRows()
     }
     @IBAction func collapseAllRowsBarButtonAction(_ sender: UIBarButtonItem) {
         sampleTreeView.collapseAllRows()
@@ -38,6 +35,15 @@ class ViewController: UIViewController {
 }
 
 extension ViewController : CITreeViewDelegate {
+    func treeViewDidReloadData(_ treeView: CITreeView, changeStat: Bool) {
+        if !initialized {
+            let expandSample = data[5].children[1].children[2].children[2]
+            print("expandSample:\(expandSample.name)")
+            sampleTreeView.expandRowRecursive(for: expandSample)
+            initialized = true
+        }
+    }
+
     func treeViewNode(_ treeViewNode: CITreeViewNode, willExpandAt indexPath: IndexPath) {
         
     }
