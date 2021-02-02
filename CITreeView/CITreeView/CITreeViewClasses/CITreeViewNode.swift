@@ -12,9 +12,9 @@ public final class CITreeViewNode: NSObject {
     public var parentNode: CITreeViewNode?
     public var expand: Bool = false
     public var level: Int = 0
-    public var item: Any
+    public var item: AnyObject
     
-    init(item: Any) {
+    init(item: AnyObject) {
         self.item = item
     }
 }

@@ -25,7 +25,11 @@ class ViewController: UIViewController {
     }
     
     @IBAction func reloadBarButtonAction(_ sender: UIBarButtonItem) {
-        sampleTreeView.expandAllRows()
+        let expandSample = data[5].children[1].children[2].children[2]
+        print("expandSample:\(expandSample.name)")
+        sampleTreeView.expandRowRecursive(for: expandSample)
+
+//        sampleTreeView.expandAllRows()
     }
     @IBAction func collapseAllRowsBarButtonAction(_ sender: UIBarButtonItem) {
         sampleTreeView.collapseAllRows()
@@ -66,15 +70,21 @@ extension ViewController : CITreeViewDelegate {
 }
 
 extension ViewController : CITreeViewDataSource {
+    func treeViewAncestors(for treeViewNodeItem: AnyObject) -> [AnyObject] {
+        guard let item = treeViewNodeItem as? CITreeViewData else { return [] }
+        let ancestors = data.getAncestorsArray(of: item)
+        print("ancestors:\(ancestors.map { $0.name })")
+        return ancestors
+    }
 
-    func treeViewSelectedNodeChildren(for treeViewNodeItem: Any) -> [Any] {
+    func treeViewSelectedNodeChildren(for treeViewNodeItem: AnyObject) -> [AnyObject] {
         if let dataObj = treeViewNodeItem as? CITreeViewData {
             return dataObj.children
         }
         return []
     }
     
-    func treeViewDataArray() -> [Any] {
+    func treeViewDataArray() -> [AnyObject] {
         return data
     }
     
@@ -89,5 +99,30 @@ extension ViewController : CITreeViewDataSource {
 
 }
 
+private extension Array where Element == CITreeViewData {
+    func getAncestorsArray(of data: CITreeViewData) -> [CITreeViewData] {
+        var searchArray: [CITreeViewData] = []
+        for child in self {
+            if child.searchRecursive(of: data, with: &searchArray) {
+                break
+            }
+        }
+        return searchArray
+    }
+}
 
-
+private extension CITreeViewData {
+    func searchRecursive(of data: CITreeViewData, with matched: inout [CITreeViewData]) -> Bool {
+        if self === data {
+            matched.insert(self, at: 0)
+            return true
+        }
+        for child in children {
+            if child.searchRecursive(of: data, with: &matched) {
+                matched.insert(self, at: 0)
+                return true
+            }
+        }
+        return false
+    }
+}

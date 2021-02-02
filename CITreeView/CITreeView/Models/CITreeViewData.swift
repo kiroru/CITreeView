@@ -80,8 +80,54 @@ extension CITreeViewData {
         let child55 = CITreeViewData(name: "Bugatti")
         let parent5 = CITreeViewData(name: "Sports Car",children:[child51,child52,child53,child54,child55])
 
+        let child6111 = CITreeViewData(name: "111")
+        let child6112 = CITreeViewData(name: "112")
+        let child6113 = CITreeViewData(name: "113")
+        let child6121 = CITreeViewData(name: "121")
+        let child6122 = CITreeViewData(name: "122")
+        let child6123 = CITreeViewData(name: "123")
+        let child6131 = CITreeViewData(name: "131")
+        let child6132 = CITreeViewData(name: "132")
+        let child6133 = CITreeViewData(name: "133")
+
+        let child6211 = CITreeViewData(name: "211")
+        let child6212 = CITreeViewData(name: "212")
+        let child6213 = CITreeViewData(name: "213")
+        let child6221 = CITreeViewData(name: "221")
+        let child6222 = CITreeViewData(name: "222")
+        let child6223 = CITreeViewData(name: "223")
+        let child6231 = CITreeViewData(name: "231")
+        let child6232 = CITreeViewData(name: "232")
+        let child6233 = CITreeViewData(name: "233")
+
+        let child6311 = CITreeViewData(name: "311")
+        let child6312 = CITreeViewData(name: "312")
+        let child6313 = CITreeViewData(name: "313")
+        let child6321 = CITreeViewData(name: "321")
+        let child6322 = CITreeViewData(name: "322")
+        let child6323 = CITreeViewData(name: "323")
+        let child6331 = CITreeViewData(name: "331")
+        let child6332 = CITreeViewData(name: "332")
+        let child6333 = CITreeViewData(name: "333")
+
+        let child6110 = CITreeViewData(name: "110", children: [child6111, child6112, child6113])
+        let child6120 = CITreeViewData(name: "120", children: [child6121, child6122, child6123])
+        let child6130 = CITreeViewData(name: "130", children: [child6131, child6132, child6133])
+
+        let child6210 = CITreeViewData(name: "210", children: [child6211, child6212, child6213])
+        let child6220 = CITreeViewData(name: "220", children: [child6221, child6222, child6223])
+        let child6230 = CITreeViewData(name: "230", children: [child6231, child6232, child6233])
+
+        let child6310 = CITreeViewData(name: "310", children: [child6311, child6312, child6313])
+        let child6320 = CITreeViewData(name: "320", children: [child6321, child6322, child6323])
+        let child6330 = CITreeViewData(name: "330", children: [child6331, child6332, child6333])
         
-        return [parent5,parent2,parent1,parent3,parent4]
+        let child6100 = CITreeViewData(name: "100", children: [child6110, child6120, child6130])
+        let child6200 = CITreeViewData(name: "200", children: [child6210, child6220, child6230])
+        let child6300 = CITreeViewData(name: "300", children: [child6310, child6320, child6330])
+        let parent6 = CITreeViewData(name: "Deep Tree", children: [child6100, child6200, child6300])
+        
+        return [parent5,parent2,parent1,parent3,parent4,parent6]
     }
     
     
