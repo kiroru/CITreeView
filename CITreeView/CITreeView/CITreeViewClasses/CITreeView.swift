@@ -11,9 +11,9 @@ import UIKit
 @objc
 public protocol CITreeViewDataSource: NSObjectProtocol {
     func treeView(_ treeView: CITreeView, cellForRowAt indexPath: IndexPath, with treeViewNode: CITreeViewNode) -> UITableViewCell
-    func treeViewSelectedNodeChildren(for treeViewNodeItem: AnyObject) -> [AnyObject]
-    func treeViewDataArray() -> [AnyObject]
-    func treeViewAncestors(for treeViewNodeItem: AnyObject) -> [AnyObject]
+    func treeViewSelectedNodeChildren(for treeViewNodeItem: Any) -> [Any]
+    func treeViewDataArray() -> [Any]
+    func treeViewAncestors(for treeViewNodeItem: Any) -> [Any]
 }
 
 @objc
@@ -163,13 +163,19 @@ public class CITreeView: UITableView {
         return cells
     }
 
-    public func expandRowRecursive(for treeViewNodeItem: AnyObject) {
-        guard let ancestors = treeViewDataSource?.treeViewAncestors(for: treeViewNodeItem) else {
+    public func expandRowForNodeItem(_ targetItem: Any, expandTarget: Bool = false, itemMatcher: (Any, Any) -> Bool) {
+        
+        guard var ancestors = treeViewDataSource?.treeViewAncestors(for: targetItem),
+              let lastDescendants = ancestors.last,
+              itemMatcher(lastDescendants, targetItem) else {
             print("cannot get ancestors")
             return
         }
+        if !expandTarget {
+            ancestors.removeLast()
+        }
         ancestors.forEach { item in
-            let indexPath = treeViewController.getIndexPathOfTreeViewNodeItem(item: item)
+            let indexPath = treeViewController.getIndexPathOfTreeViewNodeItem(where: { itemMatcher(item, $0) })
             let node = treeViewController.getTreeViewNode(atIndex: indexPath.row)
             if !node.expand {
                 expandRow(at: indexPath)
@@ -245,7 +251,7 @@ extension CITreeView: UITableViewDataSource {
 }
 
 extension CITreeView: CITreeViewControllerDelegate {
-    public func getChildren(for treeViewNodeItem: AnyObject, at indexPath: IndexPath) -> [AnyObject] {
+    public func getChildren(for treeViewNodeItem: Any, at indexPath: IndexPath) -> [Any] {
         return (self.treeViewDataSource?.treeViewSelectedNodeChildren(for: treeViewNodeItem)) ?? []
     }
     

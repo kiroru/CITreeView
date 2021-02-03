@@ -26,7 +26,14 @@ class ViewController: UIViewController {
     }
     
     @IBAction func reloadBarButtonAction(_ sender: UIBarButtonItem) {
-        sampleTreeView.expandAllRows()
+        let expandSample = data[5].children[1].children[2]
+        print("expandSample:\(expandSample.name)")
+        sampleTreeView.expandRowForNodeItem(expandSample, itemMatcher: {
+            guard let lhs = $0 as? CITreeViewData,
+                  let rhs = $1 as? CITreeViewData else { return false }
+            return lhs === rhs
+        })
+//        sampleTreeView.expandAllRows()
     }
     @IBAction func collapseAllRowsBarButtonAction(_ sender: UIBarButtonItem) {
         sampleTreeView.collapseAllRows()
@@ -37,9 +44,13 @@ class ViewController: UIViewController {
 extension ViewController : CITreeViewDelegate {
     func treeViewDidReloadData(_ treeView: CITreeView, changeStat: Bool) {
         if !initialized {
-            let expandSample = data[5].children[1].children[2].children[2]
+            let expandSample = data[5].children[1].children[2]
             print("expandSample:\(expandSample.name)")
-            sampleTreeView.expandRowRecursive(for: expandSample)
+            sampleTreeView.expandRowForNodeItem(expandSample, itemMatcher: {
+                guard let lhs = $0 as? CITreeViewData,
+                      let rhs = $1 as? CITreeViewData else { return false }
+                return lhs === rhs
+            })
             initialized = true
         }
     }
@@ -76,21 +87,21 @@ extension ViewController : CITreeViewDelegate {
 }
 
 extension ViewController : CITreeViewDataSource {
-    func treeViewAncestors(for treeViewNodeItem: AnyObject) -> [AnyObject] {
+    func treeViewAncestors(for treeViewNodeItem: Any) -> [Any] {
         guard let item = treeViewNodeItem as? CITreeViewData else { return [] }
         let ancestors = data.getAncestorsArray(of: item)
         print("ancestors:\(ancestors.map { $0.name })")
         return ancestors
     }
 
-    func treeViewSelectedNodeChildren(for treeViewNodeItem: AnyObject) -> [AnyObject] {
+    func treeViewSelectedNodeChildren(for treeViewNodeItem: Any) -> [Any] {
         if let dataObj = treeViewNodeItem as? CITreeViewData {
             return dataObj.children
         }
         return []
     }
     
-    func treeViewDataArray() -> [AnyObject] {
+    func treeViewDataArray() -> [Any] {
         return data
     }
     

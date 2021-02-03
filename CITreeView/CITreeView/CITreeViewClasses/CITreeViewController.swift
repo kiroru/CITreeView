@@ -9,7 +9,7 @@
 import Foundation
 
 public protocol CITreeViewControllerDelegate: NSObjectProtocol {
-    func getChildren(for treeViewNodeItem: AnyObject, at indexPath: IndexPath) -> [AnyObject]
+    func getChildren(for treeViewNodeItem: Any, at indexPath: IndexPath) -> [Any]
     func willExpandTreeViewNode(_ treeViewNode: CITreeViewNode, at indexPath: IndexPath)
     func willCollapseTreeViewNode(_ treeViewNode: CITreeViewNode, at indexPath: IndexPath)
 }
@@ -25,7 +25,7 @@ public class CITreeViewController: NSObject {
     }
     
     //MARK: Tree View Nodes Functions
-    func addTreeViewNode(with item: AnyObject) {
+    func addTreeViewNode(with item: Any) {
         let treeViewNode = CITreeViewNode(item: item)
         treeViewNodes.append(treeViewNode)
     }
@@ -41,7 +41,7 @@ public class CITreeViewController: NSObject {
         return treeViewNodes.firstIndex(of: treeViewNode)
     }
     
-    func insertTreeViewNode(parent parentTreeViewNode: CITreeViewNode, with item: AnyObject, to index: Int) {
+    func insertTreeViewNode(parent parentTreeViewNode: CITreeViewNode, with item: Any, to index: Int) {
         let treeViewNode = CITreeViewNode(item: item)
         treeViewNode.parentNode = parentTreeViewNode
         treeViewNodes.insert(treeViewNode, at: index)
@@ -200,9 +200,9 @@ public class CITreeViewController: NSObject {
         return IndexPath(row:0, section:0)
     }
 
-    func getIndexPathOfTreeViewNodeItem(item: AnyObject) -> IndexPath {
+    func getIndexPathOfTreeViewNodeItem(where predicate: (Any) -> Bool) -> IndexPath {
         for (index,node) in treeViewNodes.enumerated() {
-            if item === node.item {
+            if predicate(node.item) {
                 return IndexPath(row: index, section: 0)
             }
         }
