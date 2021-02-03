@@ -135,12 +135,10 @@ public class CITreeView: UITableView {
         }
     }
     
-    fileprivate func expandRows(for treeViewNode: CITreeViewNode, withSelected indexPath: IndexPath) {
+    fileprivate func expandRows(for treeViewNode: CITreeViewNode, withSelected indexPath: IndexPath, update: () -> Void) {
         guard let treeViewDelegate = self.treeViewDelegate else {return}
         if #available(iOS 11.0, *) {
-            self.performBatchUpdates({
-                insertRows()
-            }, completion: { (complete) in
+            self.performBatchUpdates(update, completion: { (complete) in
                 treeViewDelegate.treeViewNode(treeViewNode, didExpandAt: indexPath)
             })
         } else {
@@ -148,7 +146,7 @@ public class CITreeView: UITableView {
             CATransaction.setCompletionBlock({
                 treeViewDelegate.treeViewNode(treeViewNode, didExpandAt: indexPath)
             })
-            insertRows()
+            update()
             CATransaction.commit()
         }
     }
@@ -200,17 +198,21 @@ public class CITreeView: UITableView {
                     treeViewController.indexPathsArray.count > 0 {
                     
                     collapseRows(for: collapsedTreeViewNode, atIndexPath: indexPath){
-                        for (index, treeViewNode) in self.mainDataArray.enumerated() {
-                            if treeViewNode == justSelectedTreeViewNode {
-                                willExpandIndexPath.row = index
+                        self.expandRows(for: justSelectedTreeViewNode, withSelected: indexPath, update: { [unowned self] in
+                            for (index, treeViewNode) in self.mainDataArray.enumerated() {
+                                if treeViewNode == justSelectedTreeViewNode {
+                                    willExpandIndexPath.row = index
+                                }
                             }
-                        }
-                        self.treeViewController.expandRows(atIndexPath: willExpandIndexPath, with: justSelectedTreeViewNode, openWithChildrens: false)
-                        self.expandRows(for: justSelectedTreeViewNode, withSelected: indexPath)
+                            self.treeViewController.expandRows(atIndexPath: willExpandIndexPath, with: justSelectedTreeViewNode, openWithChildrens: false)
+                            self.insertRows()
+                        })
                     }
                 } else {
-                    treeViewController.expandRows(atIndexPath: willExpandIndexPath, with: justSelectedTreeViewNode, openWithChildrens: false)
-                    expandRows(for: justSelectedTreeViewNode, withSelected: indexPath)
+                    expandRows(for: justSelectedTreeViewNode, withSelected: indexPath, update: { [unowned self] in
+                        self.treeViewController.expandRows(atIndexPath: willExpandIndexPath, with: justSelectedTreeViewNode, openWithChildrens: false)
+                        self.insertRows()
+                    })
                 }
             }
         }
