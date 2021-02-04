@@ -199,5 +199,13 @@ public class CITreeViewController: NSObject {
         }
         return IndexPath(row:0, section:0)
     }
-    
+
+    func getIndexPathOfTreeViewNodeItem(where predicate: (Any) -> Bool) -> IndexPath {
+        for (index,node) in treeViewNodes.enumerated() {
+            if predicate(node.item) {
+                return IndexPath(row: index, section: 0)
+            }
+        }
+        return IndexPath(row:0, section:0)
+    }
 }

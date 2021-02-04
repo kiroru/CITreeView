@@ -13,10 +13,12 @@ public protocol CITreeViewDataSource: NSObjectProtocol {
     func treeView(_ treeView: CITreeView, cellForRowAt indexPath: IndexPath, with treeViewNode: CITreeViewNode) -> UITableViewCell
     func treeViewSelectedNodeChildren(for treeViewNodeItem: Any) -> [Any]
     func treeViewDataArray() -> [Any]
+    func treeViewAncestors(for treeViewNodeItem: Any) -> [Any]
 }
 
 @objc
 public protocol CITreeViewDelegate: NSObjectProtocol {
+    func treeViewDidReloadData(_ treeView: CITreeView, changeStat: Bool)
     func treeView(_ treeView: CITreeView, heightForRowAt indexPath: IndexPath, with treeViewNode: CITreeViewNode) -> CGFloat
     func treeView(_ treeView: CITreeView, didSelectRowAt treeViewNode: CITreeViewNode, at indexPath: IndexPath)
     func treeView(_ treeView: CITreeView, didDeselectRowAt treeViewNode: CITreeViewNode, at indexPath: IndexPath)
@@ -69,6 +71,7 @@ public class CITreeView: UITableView {
         mainDataArray = treeViewController.treeViewNodes
         
         super.reloadData()
+        treeViewDelegate?.treeViewDidReloadData(self, changeStat: true)
     }
 
     public func reloadDataWithoutChangingRowStates() {
@@ -87,6 +90,7 @@ public class CITreeView: UITableView {
             mainDataArray = treeViewController.treeViewNodes
         }
         super.reloadData()
+        treeViewDelegate?.treeViewDidReloadData(self, changeStat: false)
     }
     
     fileprivate func deleteRows() {
@@ -131,12 +135,10 @@ public class CITreeView: UITableView {
         }
     }
     
-    fileprivate func expandRows(for treeViewNode: CITreeViewNode, withSelected indexPath: IndexPath) {
+    fileprivate func expandRows(for treeViewNode: CITreeViewNode, withSelected indexPath: IndexPath, update: () -> Void) {
         guard let treeViewDelegate = self.treeViewDelegate else {return}
         if #available(iOS 11.0, *) {
-            self.performBatchUpdates({
-                insertRows()
-            }, completion: { (complete) in
+            self.performBatchUpdates(update, completion: { (complete) in
                 treeViewDelegate.treeViewNode(treeViewNode, didExpandAt: indexPath)
             })
         } else {
@@ -144,7 +146,7 @@ public class CITreeView: UITableView {
             CATransaction.setCompletionBlock({
                 treeViewDelegate.treeViewNode(treeViewNode, didExpandAt: indexPath)
             })
-            insertRows()
+            update()
             CATransaction.commit()
         }
     }
@@ -158,7 +160,64 @@ public class CITreeView: UITableView {
         }
         return cells
     }
-    
+
+    public func expandRowForNodeItem(_ targetItem: Any, expandTarget: Bool = false, itemMatcher: (Any, Any) -> Bool) {
+        
+        guard var ancestors = treeViewDataSource?.treeViewAncestors(for: targetItem),
+              let lastDescendants = ancestors.last,
+              itemMatcher(lastDescendants, targetItem) else {
+            print("cannot get ancestors")
+            return
+        }
+        if !expandTarget {
+            ancestors.removeLast()
+        }
+        ancestors.forEach { item in
+            let indexPath = treeViewController.getIndexPathOfTreeViewNodeItem(where: { itemMatcher(item, $0) })
+            let node = treeViewController.getTreeViewNode(atIndex: indexPath.row)
+            if !node.expand {
+                expandRow(at: indexPath)
+            }
+        }
+    }
+
+    public func expandRow(at indexPath: IndexPath) {
+        selectedTreeViewNode = treeViewController.getTreeViewNode(atIndex: indexPath.row)
+        guard let treeViewDelegate = self.treeViewDelegate else { return }
+        
+        if let justSelectedTreeViewNode = selectedTreeViewNode {
+            treeViewDelegate.treeView(self, didSelectRowAt: justSelectedTreeViewNode, at: indexPath)
+            var willExpandIndexPath = indexPath
+            if justSelectedTreeViewNode.expand {
+                treeViewController.collapseRows(for: justSelectedTreeViewNode, atIndexPath: indexPath)
+                collapseRows(for: justSelectedTreeViewNode, atIndexPath: indexPath){}
+            } else {
+                if collapseNoneSelectedRows,
+                    selectedTreeViewNode?.level == 0,
+                    let collapsedTreeViewNode = treeViewController.collapseAllRowsExceptOne(),
+                    treeViewController.indexPathsArray.count > 0 {
+                    
+                    collapseRows(for: collapsedTreeViewNode, atIndexPath: indexPath){
+                        self.expandRows(for: justSelectedTreeViewNode, withSelected: indexPath, update: { [unowned self] in
+                            for (index, treeViewNode) in self.mainDataArray.enumerated() {
+                                if treeViewNode == justSelectedTreeViewNode {
+                                    willExpandIndexPath.row = index
+                                }
+                            }
+                            self.treeViewController.expandRows(atIndexPath: willExpandIndexPath, with: justSelectedTreeViewNode, openWithChildrens: false)
+                            self.insertRows()
+                        })
+                    }
+                } else {
+                    expandRows(for: justSelectedTreeViewNode, withSelected: indexPath, update: { [unowned self] in
+                        self.treeViewController.expandRows(atIndexPath: willExpandIndexPath, with: justSelectedTreeViewNode, openWithChildrens: false)
+                        self.insertRows()
+                    })
+                }
+            }
+        }
+    }
+
     public func expandAllRows() {
         treeViewController.expandAllRows()
         reloadDataWithoutChangingRowStates()
@@ -166,11 +225,6 @@ public class CITreeView: UITableView {
     
     public func collapseAllRows() {
         treeViewController.collapseAllRows()
-        reloadDataWithoutChangingRowStates()
-    }
-
-    public func expandRow(for treeViewNode: CITreeViewNode, withSelected indexPath: IndexPath) {
-        treeViewController.expandRows(atIndexPath: indexPath, with: treeViewNode)
         reloadDataWithoutChangingRowStates()
     }
 }
@@ -183,36 +237,7 @@ extension CITreeView: UITableViewDelegate {
     }
     
     public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        selectedTreeViewNode = treeViewController.getTreeViewNode(atIndex: indexPath.row)
-        guard let treeViewDelegate = self.treeViewDelegate else { return }
-        
-        if let justSelectedTreeViewNode = selectedTreeViewNode {
-            treeViewDelegate.treeView(tableView as! CITreeView, didSelectRowAt: justSelectedTreeViewNode, at: indexPath)
-            var willExpandIndexPath = indexPath
-            if justSelectedTreeViewNode.expand {
-                treeViewController.collapseRows(for: justSelectedTreeViewNode, atIndexPath: indexPath)
-                collapseRows(for: justSelectedTreeViewNode, atIndexPath: indexPath){}
-            } else {
-                if collapseNoneSelectedRows,
-                    selectedTreeViewNode?.level == 0,
-                    let collapsedTreeViewNode = treeViewController.collapseAllRowsExceptOne(),
-                    treeViewController.indexPathsArray.count > 0 {
-                    
-                    collapseRows(for: collapsedTreeViewNode, atIndexPath: indexPath){
-                        for (index, treeViewNode) in self.mainDataArray.enumerated() {
-                            if treeViewNode == justSelectedTreeViewNode {
-                                willExpandIndexPath.row = index
-                            }
-                        }
-                        self.treeViewController.expandRows(atIndexPath: willExpandIndexPath, with: justSelectedTreeViewNode, openWithChildrens: false)
-                        self.expandRows(for: justSelectedTreeViewNode, withSelected: indexPath)
-                    }
-                } else {
-                    treeViewController.expandRows(atIndexPath: willExpandIndexPath, with: justSelectedTreeViewNode, openWithChildrens: false)
-                    expandRows(for: justSelectedTreeViewNode, withSelected: indexPath)
-                }
-            }
-        }
+        self.expandRow(at: indexPath)
     }
 }
 
